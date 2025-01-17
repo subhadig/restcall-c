@@ -22,31 +22,37 @@
  * SOFTWARE.
  **/
 
-#include <stdbool.h>
+#include "../include/rest_template.h"
+#include <stdlib.h>
 
-#ifndef INCLUDE_REST_TEMPLATE_H
-#define INCLUDE_REST_TEMPLATE_H
+typedef struct keyvalue {
+    char *key;
+    char *value;
+} keyvalue;
 
-typedef struct rest_template rest_template;
+typedef struct request {
+    char *url;
+    char *http_method;
+    char *auth_type;
+    char *auth_token;
+    char *content_type;
+    keyvalue *headers;
+    char *payload;
+} request;
 
-/**
- * Create a rest template.
- * Inputs:
- * - method: GET, POST, PUT etc
- * Output:
- * - pointer to the generated rest template
- **/
-rest_template *rest_template_create(char *method);
+typedef struct response {
+    unsigned status;
+    keyvalue *headers;
+    unsigned size;
+    char *body;
+} response;
 
-/**
- * Execute the rest template.
- * Inputs:
- * - rest_template: pointer to the rest_template
- * Output:
- * - true if execution is successful. false otherwise.
- **/
-bool rest_template_execute(rest_template *resttemplate);
+typedef struct rest_template {
+    request *request;
+    response *response;
+} rest_template;
 
-void rest_template_free(rest_template *resttemplate_p);
-
-#endif /* INCLUDE_REST_TEMPLATE_H */
+rest_template *rest_template_create(char *method) {
+    rest_template *rest_template_p = (rest_template *)malloc(sizeof(rest_template));
+    return NULL;
+}

@@ -8,7 +8,7 @@ SRCS := $(shell find $(SRC_DIR) -name '*.c')
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 CC := cc
-CFLAGS := -std=gnu17 -pedantic -Wall -Werror -O2 -g3 -fpie -Wl,-pie -D_FORTIFY_SOURCE=2
+CFLAGS := -std=gnu17 -pedantic -Wall -Werror -O2 -g3 -D_FORTIFY_SOURCE=2
 
 restcallc: $(OBJS)
 	mkdir -p $(BIN_DIR)

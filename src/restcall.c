@@ -22,31 +22,9 @@
  * SOFTWARE.
  **/
 
+#include "../include/restcall.h"
 #include <stdbool.h>
 
-#ifndef INCLUDE_REST_TEMPLATE_H
-#define INCLUDE_REST_TEMPLATE_H
-
-typedef struct rest_template rest_template;
-
-/**
- * Create a rest template.
- * Inputs:
- * - method: GET, POST, PUT etc
- * Output:
- * - pointer to the generated rest template
- **/
-rest_template *rest_template_create(char *method);
-
-/**
- * Execute the rest template.
- * Inputs:
- * - rest_template: pointer to the rest_template
- * Output:
- * - true if execution is successful. false otherwise.
- **/
-bool rest_template_execute(rest_template *resttemplate);
-
-void rest_template_free(rest_template *resttemplate_p);
-
-#endif /* INCLUDE_REST_TEMPLATE_H */
+bool restcall_generate_template(char *filepath) {
+    return true;
+}

@@ -22,7 +22,7 @@
  * SOFTWARE.
  **/
 
-#include "../include/rest_template.h"
+#include "rest_template.h"
 #include <stdlib.h>
 
 typedef struct keyvalue {
@@ -54,5 +54,5 @@ typedef struct rest_template {
 
 rest_template *rest_template_create(char *method) {
     rest_template *rest_template_p = (rest_template *)malloc(sizeof(rest_template));
-    return NULL;
+    return rest_template_p;
 }

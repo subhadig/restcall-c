@@ -1,0 +1,9 @@
+-std=gnu17
+-pedantic
+-Wall
+-Werror
+-O2
+-g3
+-D_FORTIFY_SOURCE=2
+-I
+./include

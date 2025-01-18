@@ -22,7 +22,7 @@
  * SOFTWARE.
  **/
 
-#include "../include/restcall.h"
+#include "restcall.h"
 #include <stdbool.h>
 
 bool restcall_generate_template(char *filepath) {

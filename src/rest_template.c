@@ -24,6 +24,7 @@
 
 #include "rest_template.h"
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct keyvalue {
     char *key;
@@ -52,7 +53,25 @@ typedef struct rest_template {
     response *response;
 } rest_template;
 
+static bool validate_method(char *method) {
+    return method != NULL && strcmp(method, "GET") == 0;
+}
+
 rest_template *rest_template_create(char *method) {
-    rest_template *rest_template_p = (rest_template *)malloc(sizeof(rest_template));
-    return rest_template_p;
+    if(!validate_method(method)) {
+        return NULL;
+    }
+    rest_template *resttemplate_p = (rest_template *)malloc(sizeof(rest_template));
+
+    resttemplate_p->request = (request *)malloc(sizeof(request));
+    resttemplate_p->request->http_method = (char *)malloc(strlen(method)+1);
+    strcpy(resttemplate_p->request->http_method, method);
+
+    return resttemplate_p;
+}
+
+void rest_template_free(rest_template *resttemplate_p) {
+    free(resttemplate_p->request->http_method);
+    free(resttemplate_p->request);
+    free(resttemplate_p);
 }

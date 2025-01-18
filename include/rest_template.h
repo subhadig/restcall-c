@@ -41,12 +41,17 @@ rest_template *rest_template_create(char *method);
 /**
  * Execute the rest template.
  * Inputs:
- * - rest_template: pointer to the rest_template
+ * - resttemplate_p: pointer to the rest_template
  * Output:
  * - true if execution is successful. false otherwise.
  **/
-bool rest_template_execute(rest_template *resttemplate);
+bool rest_template_execute(rest_template *resttemplate_p);
 
+/**
+ * Free a rest template.
+ * Inputs:
+ * - resttemplate_p: pointer to the rest_template
+ **/
 void rest_template_free(rest_template *resttemplate_p);
 
 #endif /* INCLUDE_REST_TEMPLATE_H */

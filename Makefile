@@ -4,6 +4,8 @@ BIN_DIR := ./bin
 SRC_DIR := ./src
 INCLUDE_DIR := ./include
 LIB_DIR := lib
+TEST_DIR := tests
+UNIT_TEST_DIR := $(TEST_DIR)/unit
 
 SRCS := $(shell find $(SRC_DIR) -name '*.c')
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
@@ -42,6 +44,10 @@ libs:
 
 cleanlibs:
 	rm -rf $(LIB_CJSON_DIR)
+
+test: dir restcallc
+	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) $(UNIT_TEST_DIR)/*.c -lcunit -o $(BIN_DIR)/unittests
+	$(BIN_DIR)/unittests
 
 dir:
 	@echo Creating directories...

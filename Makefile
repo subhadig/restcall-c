@@ -10,6 +10,9 @@ UNIT_TEST_DIR := $(TEST_DIR)/unit
 SRCS := $(shell find $(SRC_DIR) -name '*.c')
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
+SRCSU := $(wildcard $(UNIT_TEST_DIR)/*.c)
+OBJSU := $(SRCSU:$(UNIT_TEST_DIR)/%.c=$(BUILD_DIR)/%.o)
+
 CC := cc
 CFLAGS := -std=gnu17 -pedantic -Wall -Werror -O2 -g3 -D_FORTIFY_SOURCE=2
 
@@ -45,13 +48,18 @@ libs:
 cleanlibs:
 	rm -rf $(LIB_CJSON_DIR)
 
-test: dir restcallc
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) $(UNIT_TEST_DIR)/*.c -lcunit -o $(BIN_DIR)/unittests
+unittest: $(OBJSU) $(filter-out %/main.o, $(OBJS))
+	@echo Building test executable
+	$(CC) $^ -lcunit -o $(BIN_DIR)/unittests
+	@echo Running unittests
 	$(BIN_DIR)/unittests
+
+$(OBJSU): $(BUILD_DIR)/%.o: $(UNIT_TEST_DIR)/%.c dir
+	$(CC) -c $(CFLAGS) -I$(INCLUDE_DIR) $< -lcunit -o $@
 
 dir:
 	@echo Creating directories...
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(BUILD_DIR)
 
-.PHONY: restcallc clean libs cleanlibs dir
+.PHONY: restcallc clean libs cleanlibs dir test

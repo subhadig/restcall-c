@@ -1,24 +1,26 @@
-#include <CUnit/CUnit.h>
+#include <CUnit/Basic.h>
 #include <stdlib.h>
 #include "rest_template.h"
 
 static rest_template *resttemplate_p = NULL;
 
-static int initializeSuite(void) {
+int initializeSuite(void) {
     return 0;
 }
 
-static int cleanup(void) {
+int cleanup(void) {
     free(resttemplate_p);
     return 0;
 }
 
-static void test_rest_template_create(void) {
+void test_rest_template_create(void) {
+    puts("Running test_rest_template_create");
     resttemplate_p = rest_template_create("GET");
-    CU_ASSERT_PTR_NULL(resttemplate_p);
+    CU_ASSERT_PTR_NULL_FATAL(resttemplate_p);
+    CU_ASSERT_FALSE_FATAL(1);
 }
 
-static CU_TestInfo test_cases[] = {
+CU_TestInfo test_cases[] = {
     {"test rest_template cretion", test_rest_template_create},
     CU_TEST_INFO_NULL
 };

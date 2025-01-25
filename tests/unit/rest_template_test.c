@@ -28,6 +28,12 @@ static void test_rest_template_create_incorrect_method(void) {
     CU_ASSERT_PTR_NULL(null_resttemplate_p);
 }
 
+static void test_rest_template_serialize(void) {
+    char *serialized_rt = rest_template_serialize(resttemplate_p);
+    puts(serialized_rt);
+    free(serialized_rt);
+}
+
 static void test_rest_template_free(void) {
     rest_template_free(resttemplate_p);
 }
@@ -35,6 +41,7 @@ static void test_rest_template_free(void) {
 static CU_TestInfo test_cases[] = {
     TEST_INFO(test_rest_template_create),
     TEST_INFO(test_rest_template_create_incorrect_method),
+    TEST_INFO(test_rest_template_serialize),
     TEST_INFO(test_rest_template_free),
     CU_TEST_INFO_NULL
 };

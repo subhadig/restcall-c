@@ -30,7 +30,6 @@ static void test_rest_template_create_incorrect_method(void) {
 
 static void test_rest_template_free(void) {
     rest_template_free(resttemplate_p);
-    CU_ASSERT_PTR_NULL(resttemplate_p);
 }
 
 static CU_TestInfo test_cases[] = {

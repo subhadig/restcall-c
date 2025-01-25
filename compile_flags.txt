@@ -7,3 +7,5 @@
 -D_FORTIFY_SOURCE=2
 -I
 ./include
+-I
+./lib/cjson/

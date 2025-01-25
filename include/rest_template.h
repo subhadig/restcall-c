@@ -54,4 +54,13 @@ bool rest_template_execute(rest_template *resttemplate_p);
  **/
 void rest_template_free(rest_template *resttemplate_p);
 
+/**
+ * Serializes the rest template.
+ * Inputs:
+ * - resttemplate_p: pointer to the rest_template
+ * Output:
+ * - Serialized rest_template string 
+ **/
+char *rest_template_serialize(rest_template *resttemplate_p);
+
 #endif /* INCLUDE_REST_TEMPLATE_H */

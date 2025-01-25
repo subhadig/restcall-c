@@ -1,27 +1,42 @@
 #include <CUnit/Basic.h>
+#include <CUnit/CUnit.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "rest_template.h"
 
+#ifndef TEST_INFO
+#define TEST_INFO(x) {#x, x}
+#endif
+
 static rest_template *resttemplate_p = NULL;
 
-int initializeSuite(void) {
+static int initializeSuite(void) {
     return 0;
 }
 
-int cleanup(void) {
-    free(resttemplate_p);
+static int cleanup(void) {
     return 0;
 }
 
-void test_rest_template_create(void) {
-    puts("Running test_rest_template_create");
+static void test_rest_template_create(void) {
     resttemplate_p = rest_template_create("GET");
-    CU_ASSERT_PTR_NULL_FATAL(resttemplate_p);
-    CU_ASSERT_FALSE_FATAL(1);
+    CU_ASSERT_PTR_NOT_NULL(resttemplate_p);
 }
 
-CU_TestInfo test_cases[] = {
-    {"test rest_template cretion", test_rest_template_create},
+static void test_rest_template_create_incorrect_method(void) {
+    rest_template *null_resttemplate_p = rest_template_create("GET123");
+    CU_ASSERT_PTR_NULL(null_resttemplate_p);
+}
+
+static void test_rest_template_free(void) {
+    rest_template_free(resttemplate_p);
+    CU_ASSERT_PTR_NULL(resttemplate_p);
+}
+
+static CU_TestInfo test_cases[] = {
+    TEST_INFO(test_rest_template_create),
+    TEST_INFO(test_rest_template_create_incorrect_method),
+    TEST_INFO(test_rest_template_free),
     CU_TEST_INFO_NULL
 };
 

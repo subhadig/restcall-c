@@ -21,7 +21,7 @@ LIB_CJSON_URL := https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.18.t
 LIB_CJSON_DIR := $(LIB_DIR)/$(LIB_CJSON_NAME)
 
 CC := cc
-CFLAGS := -std=gnu17 -pedantic -Wall -Werror -O2 -g3 -D_FORTIFY_SOURCE=2
+CFLAGS := -g -std=gnu17 -pedantic -Wall -Werror -O2 -g3 -D_FORTIFY_SOURCE=2
 CPPFLAGS := -I$(INCLUDE_DIR) -I$(LIB_CJSON_DIR)
 LDFLAGS := -L$(BUILD_DIR)
 LDLIBS := -l$(LIB_CJSON_NAME)

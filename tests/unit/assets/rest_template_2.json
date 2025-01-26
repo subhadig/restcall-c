@@ -1,0 +1,13 @@
+{
+    "request": {
+        "url": "https://www.example.com",
+        "httpMethod": "GET",
+        "authType": "bearer",
+        "authToken": "test_token",
+        "contentType": "application/json",
+        "headers": {
+            "accept": "application/json"
+        },
+        "body": ""
+    }
+}

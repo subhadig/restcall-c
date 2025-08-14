@@ -10,8 +10,6 @@
 #define TEST_INFO_WITH_NAME(x, y) {x, y}
 #endif
 
-static rest_template *resttemplate_p = NULL;
-
 static int initializeSuite(void) {
     return 0;
 }
@@ -20,20 +18,29 @@ static int cleanup(void) {
     return 0;
 }
 
-static void test_rest_template_create(void) {
-    resttemplate_p = rest_template_create("GET");
-    CU_ASSERT_PTR_NOT_NULL(resttemplate_p);
+static void test_rest_template_create_free(void) {
+    rest_template *resttemplate_p = rest_template_create("GET");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(resttemplate_p);
+    rest_template_free(resttemplate_p);
 }
 
 static void test_rest_template_create_incorrect_method(void) {
     rest_template *null_resttemplate_p = rest_template_create("GET123");
-    CU_ASSERT_PTR_NULL(null_resttemplate_p);
+    CU_ASSERT_PTR_NULL_FATAL(null_resttemplate_p);
 }
 
 static void test_rest_template_serialize(void) {
+    rest_template *resttemplate_p = rest_template_create("GET");
+    if (resttemplate_p == NULL) {
+        CU_FAIL_FATAL("Unable to create rest template");
+    }
+
     char *serialized_rt = rest_template_serialize(resttemplate_p);
-    CU_ASSERT_PTR_NOT_NULL(serialized_rt);
-    //puts(serialized_rt);
+
+    if (serialized_rt == NULL) {
+        CU_FAIL("Rest template serialization failed");
+        goto cleanup_resttemplate_p;
+    }
 
     char *expected_value = NULL;
 
@@ -70,7 +77,6 @@ static void test_rest_template_serialize(void) {
     }
     expected_value[size - 1] = '\0';
 
-    //puts(expected_value);
     int is_expected_equals_actual = strcmp(expected_value, serialized_rt);
     CU_ASSERT_EQUAL(0, is_expected_equals_actual);
 
@@ -78,7 +84,8 @@ cleanup_expected_file:
     fclose(expected_file);
 cleanup_serialized_rt:
     free(serialized_rt);
-    free(expected_value);
+cleanup_resttemplate_p:
+    rest_template_free(resttemplate_p);
 }
 
 static void test_rest_template_deserialize(void) {
@@ -87,8 +94,7 @@ static void test_rest_template_deserialize(void) {
 
     FILE *expected_file = fopen(filepath, "r");
     if (expected_file == NULL) {
-        CU_FAIL("Unable to open expected file");
-        return;
+        CU_FAIL_FATAL("Unable to open expected file");
     }
 
     if (fseek(expected_file, 0, SEEK_END) != 0) {
@@ -117,7 +123,7 @@ static void test_rest_template_deserialize(void) {
     }
     expected_value[size - 1] = '\0';
 
-    resttemplate_p = rest_template_deserialize(expected_value);
+    rest_template *resttemplate_p = rest_template_deserialize(expected_value);
     if (resttemplate_p == NULL) {
         CU_FAIL("Deserialization failed");
         goto cleanup_expected_file;
@@ -138,22 +144,16 @@ cleanup_expected_file:
     fclose(expected_file);
 }
 
-static void test_rest_template_free(void) {
-    rest_template_free(resttemplate_p);
-}
-
 static void test_rest_template_free_null_pointer(void) {
     rest_template_free(NULL);
 }
 
 static CU_TestInfo test_cases[] = {
-    TEST_INFO(test_rest_template_create),
+    TEST_INFO(test_rest_template_create_free),
     TEST_INFO(test_rest_template_create_incorrect_method),
-    TEST_INFO(test_rest_template_serialize),
-    TEST_INFO_WITH_NAME("test_rest_template_free 1", test_rest_template_free),
-    TEST_INFO(test_rest_template_deserialize),
-    TEST_INFO_WITH_NAME("test_rest_template_free 2", test_rest_template_free),
     TEST_INFO(test_rest_template_free_null_pointer),
+    TEST_INFO(test_rest_template_serialize),
+    TEST_INFO(test_rest_template_deserialize),
     CU_TEST_INFO_NULL
 };
 

@@ -73,18 +73,38 @@ rest_template *rest_template_create(char *method) {
     rest_template *resttemplate_p = NULL;
 
     if (!validate_method(method)) {
+        fprintf(stderr, "Invalid Http method: %s. Rest template creation failed.\n", method);
         goto failed;
     }
 
     resttemplate_p = (rest_template *)malloc(sizeof(rest_template));
-    GOTO_LABEL_IF_NULL(resttemplate_p, failed);
+    if (resttemplate_p == NULL) {
+        fprintf(stderr, "Failed to create rest template.\n");
+        goto failed;
+    }
 
     resttemplate_p->request = (request *)malloc(sizeof(request));
-    GOTO_LABEL_IF_NULL(resttemplate_p->request, failed);
+    if (resttemplate_p->request == NULL) {
+        fprintf(stderr, "Failed to create rest template request.\n");
+        goto failed;
+    }
+    resttemplate_p->request->url = NULL;
 
     resttemplate_p->request->http_method = (char *)malloc(strlen(method)+1);
-    GOTO_LABEL_IF_NULL(resttemplate_p->request->http_method, failed_request);
+    if (resttemplate_p->request->http_method == NULL) {
+        fprintf(stderr, "Failed to create rest template request http method.\n");
+        goto failed_request;
+    }
     strcpy(resttemplate_p->request->http_method, method);
+
+    resttemplate_p->request->auth_type = NULL;
+    resttemplate_p->request->auth_token = NULL;
+    resttemplate_p->request->content_type = NULL;
+    resttemplate_p->request->headers = NULL;
+    resttemplate_p->request->headers_size = 0;
+    resttemplate_p->request->payload = NULL;
+
+    resttemplate_p->response = NULL;
 
     return resttemplate_p;
 
@@ -108,6 +128,7 @@ void rest_template_free(rest_template *resttemplate_p) {
         free(resttemplate_p->request->headers);
         free(resttemplate_p->request->payload);
         free(resttemplate_p->request);
+        free(resttemplate_p->response);
     }
     free(resttemplate_p);
 }
@@ -252,11 +273,16 @@ static keyvalue *deserialize_headers(cJSON *headers_json, unsigned *headers_size
     keyvalue *headers_cpy = headers;
     cJSON_ArrayForEach(keyvalue_json, headers_json) {
         headers_cpy->key = keyvalue_json->string;
-        headers_cpy->value = read_string_value_from_json(keyvalue_json, "value");
-        if (headers_cpy->key == NULL || headers_cpy->value == NULL) {
-            fprintf(stderr, "Unable to read key value for header\n");
+        if (headers_cpy->key == NULL) {
+            fprintf(stderr, "Unable to read key for header\n");
             goto cleanup_headers;
         }
+        headers_cpy->value = keyvalue_json->valuestring;
+        if (headers_cpy->value == NULL) {
+            fprintf(stderr, "Unable to read value for header %s\n", headers_cpy->key);
+            goto cleanup_headers;
+        }
+        headers_cpy++;
     }
 
     return headers;
@@ -274,7 +300,8 @@ static bool convert_json_rest_template(cJSON *resttemplate_json, rest_template *
         goto failed;
     }
 
-    if (cJSON_GetObjectItemCaseSensitive(resttemplate_json, "response") != NULL) {
+    cJSON *response_json = cJSON_GetObjectItemCaseSensitive(resttemplate_json, "response");
+    if (response_json != NULL) {
         fprintf(stderr, "Rest template also contains response\n");
         goto failed;
     }

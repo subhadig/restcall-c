@@ -6,7 +6,8 @@
         "authToken": "test_token",
         "contentType": "application/json",
         "headers": {
-            "accept": "application/json"
+            "accept": "application/json",
+            "Cache-Control": "no-cache"
         },
         "body": ""
     }

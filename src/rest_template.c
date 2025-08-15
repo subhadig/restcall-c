@@ -29,12 +29,6 @@
 #include "rest_template.h"
 #include "cJSON.h"
 
-#ifndef SRC_REST_TEMPLATE_C
-#define SRC_REST_TEMPLATE_C
-#define GOTO_LABEL_IF_NULL(x,y) if (x == NULL) goto y;
-#define GOTO_END_IF_NULL(x) GOTO_LABEL_IF_NULL(x, end);
-#endif
-
 typedef struct keyvalue {
     char *key;
     char *value;
@@ -90,7 +84,7 @@ rest_template *rest_template_create(char *method) {
     }
     resttemplate_p->request->url = NULL;
 
-    resttemplate_p->request->http_method = (char *)malloc(strlen(method)+1);
+    resttemplate_p->request->http_method = (char *)malloc(strlen(method) + 1);
     if (resttemplate_p->request->http_method == NULL) {
         fprintf(stderr, "Failed to create rest template request http method.\n");
         goto failed_request;
@@ -143,12 +137,18 @@ static char *get_string_or_default(char *str, char *default_value) {
 
 static cJSON *serialize_headers(keyvalue *arr, unsigned size) {
     cJSON *headers_json = cJSON_CreateObject();
-    GOTO_LABEL_IF_NULL(headers_json, failed);
+    if (headers_json == NULL) {
+        fprintf(stderr, "Failed creating headers json");
+        goto failed;
+    }
     for (int i = 0; i < size; i++) {
-        GOTO_LABEL_IF_NULL(cJSON_AddStringToObject(headers_json,
+        if(cJSON_AddStringToObject(headers_json,
                     get_string_or_default(arr[i].key, ""),
-                    get_string_or_default(arr[i].value, "")),
-                failed);
+                    get_string_or_default(arr[i].value, "")) == NULL)
+        {
+            fprintf(stderr, "Failed creating headers string");
+            goto failed;
+        }
     }
     return headers_json;
 failed:
@@ -207,44 +207,78 @@ char *replace_tabs_with_spaces(char *str) {
     }
     *str_copy = '\0';
 end:
-    //Free the original string
-    free(str);
     return new_str;
 }
 
 char *rest_template_serialize(rest_template *resttemplate_p) {
-    char *json_str = NULL;
     cJSON *rt = NULL;
+    char *final_json_str = NULL;
 
-    GOTO_END_IF_NULL(resttemplate_p->request);
+    if (resttemplate_p->request == NULL) {
+        fprintf(stderr, "Request is empty. Aborting serialization.");
+        goto end;
+    }
 
     //Create the root Json
     rt = cJSON_CreateObject();
-    GOTO_END_IF_NULL(rt);
+    if (rt == NULL) {
+        fprintf(stderr, "Failed creating root json");
+        goto end;
+    }
 
     //Create the request Json
     cJSON *request = cJSON_AddObjectToObject(rt, "request");
-    GOTO_END_IF_NULL(request);
+    if (request == NULL) {
+        fprintf(stderr, "Failed creating request json");
+        goto end;
+    }
 
-    GOTO_END_IF_NULL(cJSON_AddStringToObject(request, "url", get_string_or_default(resttemplate_p->request->url, "")));
-    GOTO_END_IF_NULL(cJSON_AddStringToObject(request, "httpMethod", get_string_or_default(resttemplate_p->request->http_method, "")));
-    GOTO_END_IF_NULL(cJSON_AddStringToObject(request, "authType", get_string_or_default(resttemplate_p->request->auth_type, "")));
-    GOTO_END_IF_NULL(cJSON_AddStringToObject(request, "authToken", get_string_or_default(resttemplate_p->request->auth_token, "")));
-    GOTO_END_IF_NULL(cJSON_AddStringToObject(request, "contentType", get_string_or_default(resttemplate_p->request->content_type, "")));
+    if (cJSON_AddStringToObject(request, "url", get_string_or_default(resttemplate_p->request->url, "")) == NULL) {
+        fprintf(stderr, "Failed updating url in json");
+        goto end;
+    }
+    if (cJSON_AddStringToObject(request, "httpMethod", get_string_or_default(resttemplate_p->request->http_method, "")) == NULL) {
+        fprintf(stderr, "Failed updating httpMethod in json");
+        goto end;
+    }
+    if (cJSON_AddStringToObject(request, "authType", get_string_or_default(resttemplate_p->request->auth_type, "")) == NULL) {
+        fprintf(stderr, "Failed updating authType in json");
+        goto end;
+    }
+    if (cJSON_AddStringToObject(request, "authToken", get_string_or_default(resttemplate_p->request->auth_token, "")) == NULL) {
+        fprintf(stderr, "Failed updating authToken in json");
+        goto end;
+    }
+    if (cJSON_AddStringToObject(request, "contentType", get_string_or_default(resttemplate_p->request->content_type, "")) == NULL) {
+        fprintf(stderr, "Failed updating contentType in json");
+        goto end;
+    }
     cJSON *headers = serialize_headers(resttemplate_p->request->headers, resttemplate_p->request->headers_size);
-    GOTO_END_IF_NULL(headers);
-    cJSON_AddItemToObject(request, "headers", headers);
-    GOTO_END_IF_NULL(cJSON_AddStringToObject(request, "body", get_string_or_default(resttemplate_p->request->payload, "")));
-    json_str = cJSON_Print(rt);
+    if (headers == NULL) {
+        fprintf(stderr, "Failed serializing headers");
+        goto end;
+    }
+    if (cJSON_AddItemToObject(request, "headers", headers) == 0) {
+        fprintf(stderr, "Failed updating headers in json");
+        goto end;
+    }
+    if (cJSON_AddStringToObject(request, "body", get_string_or_default(resttemplate_p->request->payload, "")) == NULL) {
+        fprintf(stderr, "Failed updating body in json");
+        goto end;
+    }
+    char *json_str = cJSON_Print(rt);
     if(json_str == NULL) {
         fprintf(stderr, "Unable to convert Json to string\n");
         goto end;
     }
-    json_str = replace_tabs_with_spaces(json_str);
-
+    final_json_str = replace_tabs_with_spaces(json_str);
+    if (final_json_str == NULL) {
+        fprintf(stderr, "Unable to format Json string\n");
+    }
+    free(json_str);
 end:
     cJSON_Delete(rt);
-    return json_str;
+    return final_json_str;
 }
 
 static char *read_string_value_from_json(cJSON *json, char *key) {
@@ -253,7 +287,9 @@ static char *read_string_value_from_json(cJSON *json, char *key) {
         fprintf(stderr, "Unable to read %s from json or it's not in correct format\n", key);
         goto failed;
     }
-    return value->valuestring;
+    char *return_val = malloc(strlen(value->valuestring));
+    strcpy(return_val, value->valuestring);
+    return return_val;
 
 failed:
     return NULL;
@@ -272,28 +308,48 @@ static keyvalue *deserialize_headers(cJSON *headers_json, unsigned *headers_size
     cJSON *keyvalue_json = NULL;
     keyvalue *headers_cpy = headers;
     cJSON_ArrayForEach(keyvalue_json, headers_json) {
-        headers_cpy->key = keyvalue_json->string;
+        headers_cpy->key = malloc(strlen(keyvalue_json->string) + 1);
         if (headers_cpy->key == NULL) {
-            fprintf(stderr, "Unable to read key for header\n");
-            goto cleanup_headers;
+            fprintf(stderr, "Unable to allocate memory for header\n");
+            goto cleanup_headers_elements;
         }
-        headers_cpy->value = keyvalue_json->valuestring;
+        if (strcpy(headers_cpy->key, keyvalue_json->string) == NULL) {
+            fprintf(stderr, "Unable to copy header key\n");
+            free(headers_cpy->key);
+            goto cleanup_headers_elements;
+        }
+        headers_cpy->value = malloc(strlen(keyvalue_json->valuestring) + 1);
         if (headers_cpy->value == NULL) {
-            fprintf(stderr, "Unable to read value for header %s\n", headers_cpy->key);
-            goto cleanup_headers;
+            fprintf(stderr, "Unable to allocate memory for header value for key %s\n", headers_cpy->key);
+            free(headers_cpy->key);
+            goto cleanup_headers_elements;
+        }
+        if (strcpy(headers_cpy->value, keyvalue_json->valuestring) == NULL) {
+            fprintf(stderr, "Unable to copy header value for key %s\n", headers_cpy->key);
+            free(headers_cpy->key);
+            free(headers_cpy->value);
+            goto cleanup_headers_elements;
         }
         headers_cpy++;
     }
 
     return headers;
 
+cleanup_headers_elements:
+    { }
+    keyvalue *headers_to_free = headers;
+    while (headers_to_free < headers_cpy) {
+        free(headers_to_free->key);
+        free(headers_to_free->value);
+        headers_to_free++;
+    }
 cleanup_headers:
     free(headers);
 failed:
     return NULL;
 }
 
-static bool convert_json_rest_template(cJSON *resttemplate_json, rest_template *resttemplate_p) {
+static bool map_json_to_rest_template(cJSON *resttemplate_json, rest_template *resttemplate_p) {
     cJSON *request_json = cJSON_GetObjectItemCaseSensitive(resttemplate_json, "request");
     if (request_json == NULL) {
         fprintf(stderr, "Unable to read request from json\n");
@@ -306,82 +362,81 @@ static bool convert_json_rest_template(cJSON *resttemplate_json, rest_template *
         goto failed;
     }
 
-    resttemplate_p->request = (request *)malloc(sizeof(request));
-    if (resttemplate_p->request == NULL) {
-        fprintf(stderr, "Unable to allocate memory for request\n");
-        goto cleanup_request;
-    }
-
     resttemplate_p->request->url = read_string_value_from_json(request_json, "url");
-    if (resttemplate_p->request->url == NULL) goto cleanup_request;
-
-    resttemplate_p->request->http_method = read_string_value_from_json(request_json, "httpMethod");
-    if (resttemplate_p->request->http_method == NULL) goto cleanup_request;
+    if (resttemplate_p->request->url == NULL) goto failed;
 
     resttemplate_p->request->auth_type = read_string_value_from_json(request_json, "authType");
-    if (resttemplate_p->request->auth_type == NULL) goto cleanup_request;
+    if (resttemplate_p->request->auth_type == NULL) goto failed;
 
     resttemplate_p->request->auth_token = read_string_value_from_json(request_json, "authToken");
-    if (resttemplate_p->request->auth_type == NULL) goto cleanup_request;
+    if (resttemplate_p->request->auth_type == NULL) goto failed;
 
     resttemplate_p->request->content_type = read_string_value_from_json(request_json, "contentType");
-    if (resttemplate_p->request->content_type == NULL) goto cleanup_request;
+    if (resttemplate_p->request->content_type == NULL) goto failed;
 
     resttemplate_p->request->payload = read_string_value_from_json(request_json, "body");
-    if (resttemplate_p->request->payload == NULL) goto cleanup_request;
+    if (resttemplate_p->request->payload == NULL) goto failed;
 
     cJSON *headers_json = cJSON_GetObjectItemCaseSensitive(request_json, "headers");
     if (headers_json == NULL) {
         fprintf(stderr, "Unable to read headers\n");
-        goto cleanup_request;
+        goto failed;
     }
     resttemplate_p->request->headers = deserialize_headers(headers_json, &resttemplate_p->request->headers_size);
 
     return true;
 
-cleanup_request:
-    if (resttemplate_p->request != NULL) {
-        free(resttemplate_p->request->url);
-        free(resttemplate_p->request->auth_type);
-        free(resttemplate_p->request->auth_token);
-        free(resttemplate_p->request->content_type);
-        free(resttemplate_p->request->payload);
-    }
-    free(resttemplate_p->request);
 failed:
     return false;
 }
 
 rest_template *rest_template_deserialize(char *resttemplate_str) {
-    rest_template *resttemplate_p = NULL;
     cJSON *resttemplate_json = NULL;
+    char *httpMethod = NULL;
+    rest_template *resttemplate_p = NULL;
+    bool success = false;
+
     if (resttemplate_str == NULL || strlen(resttemplate_str) == 0) {
         fprintf(stderr, "NULL or empty string is provided as input\n");
-        goto failed;
+        goto end;
     }
 
     resttemplate_json = cJSON_Parse(resttemplate_str);
     if (resttemplate_json == NULL) {
         fprintf(stderr, "Json conversion failed for input\n");
-        goto failed;
+        goto end;
     }
 
-    resttemplate_p = (rest_template *)malloc(sizeof(rest_template));
-    if (resttemplate_p == NULL) {
-        fprintf(stderr, "Failed allocating memory for rest_template\n");
+    cJSON *request_json = cJSON_GetObjectItemCaseSensitive(resttemplate_json, "request");
+    if (request_json == NULL) {
+        fprintf(stderr, "Unable to read request from json\n");
         goto cleanup_json;
     }
 
-    if (convert_json_rest_template(resttemplate_json, resttemplate_p) != true) {
+    httpMethod = read_string_value_from_json(request_json, "httpMethod");
+    resttemplate_p = rest_template_create(httpMethod);
+    if (resttemplate_p == NULL) {
+        fprintf(stderr, "Failed creating rest_template\n");
+        goto cleanup_httpMethod;
+    }
+
+    if (map_json_to_rest_template(resttemplate_json, resttemplate_p) != true) {
         fprintf(stderr, "Failed to convert Json to rest_template\n");
         goto cleanup_resttemplate;
     }
-    return resttemplate_p;
+
+    success = true;
 
 cleanup_resttemplate:
-    free(resttemplate_p);
+    if (!success) rest_template_free(resttemplate_p);
+cleanup_httpMethod:
+    free(httpMethod);
 cleanup_json:
     cJSON_Delete(resttemplate_json);
-failed:
-    return NULL;
+end:
+    if (success) {
+        return resttemplate_p;
+    } else {
+        return NULL;
+    }
 }
